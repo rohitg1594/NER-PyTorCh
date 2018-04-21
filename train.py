@@ -19,19 +19,19 @@ models_path = "models/"
 
 optparser = optparse.OptionParser()
 optparser.add_option(
-    "-T", "--train", default="dataset/eng.train",
+    "-T", "--train", default="dataset/eng/eng.train",
     help="Train set location"
 )
 optparser.add_option(
-    "-d", "--dev", default="dataset/eng.testa",
+    "-d", "--dev", default="dataset/eng/eng.testa",
     help="Dev set location"
 )
 optparser.add_option(
-    "-t", "--test", default="dataset/eng.testb",
+    "-t", "--test", default="dataset/eng/eng.testb",
     help="Test set location"
 )
 optparser.add_option(
-    '--test_train', default='dataset/eng.train54019',
+    '--test_train', default='dataset/eng/eng.train54019',
     help='test train'
 )
 optparser.add_option(
@@ -185,6 +185,7 @@ dico_words, word_to_id, id_to_word = augment_with_pretrained(
             [[w[0] for w in s] for s in dev_sentences + test_sentences])
         ) if not parameters['all_emb'] else None
     )
+
 
 dico_chars, char_to_id, id_to_char = char_mapping(train_sentences)
 dico_tags, tag_to_id, id_to_tag = tag_mapping(train_sentences)
@@ -341,7 +342,7 @@ def evaluating(model, datas, best_F):
     return best_F, new_F, save
 
 model.train(True)
-for epoch in range(1, 10001):
+for epoch in range(1, 5):
     for i, index in enumerate(np.random.permutation(len(train_data))):
         tr = time.time()
         count += 1

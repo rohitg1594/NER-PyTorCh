@@ -5,6 +5,7 @@ import torch
 import time
 import cPickle
 from torch.autograd import Variable
+import string
 
 from loader import *
 from utils import *
@@ -47,6 +48,11 @@ optparser.add_option(
     help='char_CNN or char_LSTM'
 )
 
+optparser.add_option(
+    "-o", "--output", default="",
+    help = "output dir of predictions and score"
+)
+
 opts = optparser.parse_args()[0]
 
 mapping_file = opts.map_path
@@ -63,7 +69,6 @@ word_embeds = mappings['word_embeds']
 
 use_gpu =  opts.use_gpu == 1 and torch.cuda.is_available()
 
-
 assert os.path.isfile(opts.test)
 assert parameters['tag_scheme'] in ['iob', 'iobes']
 
@@ -77,17 +82,21 @@ zeros = parameters['zeros']
 tag_scheme = parameters['tag_scheme']
 
 test_sentences = load_sentences(opts.test, lower, zeros)
+print(test_sentences[:2])
 update_tag_scheme(test_sentences, tag_scheme)
 test_data = prepare_dataset(
     test_sentences, word_to_id, char_to_id, tag_to_id, lower
 )
+print(test_data[:2])
 
 model = torch.load(opts.model_path)
+
 model_name = opts.model_path.split('/')[-1].split('.')[0]
 
 if use_gpu:
     model.cuda()
 model.eval()
+
 
 # def getmaxlen(tags):
 #     l = 1
@@ -109,6 +118,8 @@ model.eval()
 def eval(model, datas, maxl=1):
     prediction = []
     confusion_matrix = torch.zeros((len(tag_to_id) - 2, len(tag_to_id) - 2))
+    print(type(datas))
+    print(datas[:2])
     for data in datas:
         ground_truth_id = data['tags']
         # l = getmaxlen(ground_truth_id)
@@ -149,14 +160,22 @@ def eval(model, datas, maxl=1):
         else:
             val, out = model(dwords, chars2_mask, dcaps, chars2_length, d)
         predicted_id = out
+        sents = ''
+        for w in words:
+            if w in string.punctuation:
+                sents += w
+            else:
+                sents += ' ' + w
+        #print(predicted_id)
+        #print(sents)
         for (word, true_id, pred_id) in zip(words, ground_truth_id, predicted_id):
             line = ' '.join([word, id_to_tag[true_id], id_to_tag[pred_id]])
             prediction.append(line)
             confusion_matrix[true_id, pred_id] += 1
         prediction.append('')
-    predf = eval_temp + '/pred.' + model_name
-    scoref = eval_temp + '/score.' + model_name
-
+    predf = opts.output + '/pred.' + model_name
+    scoref = opts.output + '/score.' + model_name
+    print(id_to_tag)
     with open(predf, 'wb') as f:
         f.write('\n'.join(prediction))
 
@@ -177,11 +196,13 @@ def eval(model, datas, maxl=1):
               ["%.3f" % (confusion_matrix[i][i] * 100. / max(1, confusion_matrix[i].sum()))])
         ))
 
-# for l in range(1, 6):
-#     print('maxl=', l)
-#     eval(model, test_data, l)
-#     # print()
-# # for i in range(10):
-# #     eval(model, test_data, 100)
+
+for l in range(1, 2):
+    print('maxl=', l)
+    eval(model, test_data, l)
+    print()
+#for i in range(10):
+#    eval(model, test_data, 100)
+
 
 print(time.time() - t)

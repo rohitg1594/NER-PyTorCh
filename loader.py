@@ -163,7 +163,13 @@ def prepare_dataset(sentences, word_to_id, char_to_id, tag_to_id, lower=True):
         chars = [[char_to_id[c] for c in w if c in char_to_id]
                  for w in str_words]
         caps = [cap_feature(w) for w in str_words]
-        tags = [tag_to_id[w[-1]] for w in s]
+        tags = []
+        for w in s:
+            if w[-1] in tag_to_id:
+                tags.append(tag_to_id[w[-1]])
+            else:
+                tags.append(0)
+ 
         data.append({
             'str_words': str_words,
             'words': words,
@@ -183,12 +189,11 @@ def augment_with_pretrained(dictionary, ext_emb_path, words):
     """
     print('Loading pretrained embeddings from %s...' % ext_emb_path)
     assert os.path.isfile(ext_emb_path)
-
     # Load pretrained embeddings from file
     pretrained = set([
         line.rstrip().split()[0].strip()
         for line in codecs.open(ext_emb_path, 'r', 'utf-8')
-        if len(ext_emb_path) > 0
+        if len(line.rstrip().split()) > 0 
     ])
 
     # We either add every word in the pretrained file,
