@@ -34,6 +34,9 @@ def load_sentences(path, lower, zeros):
                 sentence = []
         else:
             word = line.split()
+	    if len(word) < 2:
+		print(word)
+		continue
             assert len(word) >= 2
             sentence.append(word)
     if len(sentence) > 0:
