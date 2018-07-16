@@ -402,7 +402,7 @@ for epoch in range(1, 5):
             losswin = 'loss_' + name
             textwin = 'loss_text_' + name
             #vis.line(np.array(losses), X=np.array([plot_every*i for i in range(len(losses))]),
-                 win=losswin, opts={'title': losswin, 'legend': ['loss']})
+            #     win=losswin, opts={'title': losswin, 'legend': ['loss']})
             #vis.text(text, win=textwin, opts={'title': textwin})
             loss = 0.0
 
