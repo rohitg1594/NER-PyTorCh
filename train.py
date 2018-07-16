@@ -10,7 +10,7 @@ import cPickle
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import sys
-import visdom
+#import visdom
 from utils import *
 from loader import *
 from model import BiLSTM_CRF
@@ -30,10 +30,10 @@ optparser.add_option(
     "-t", "--test", default="dataset/eng/eng.testb",
     help="Test set location"
 )
-optparser.add_option(
-    '--test_train', default='dataset/eng/eng.train54019',
-    help='test train'
-)
+#optparser.add_option(
+#    '--test_train', default='dataset/eng/eng.train54019',
+#    help='test train'
+#)
 optparser.add_option(
     '--score', default='evaluation/temp/score.txt',
     help='score file location'
@@ -169,12 +169,12 @@ tag_scheme = parameters['tag_scheme']
 train_sentences = loader.load_sentences(opts.train, lower, zeros)
 dev_sentences = loader.load_sentences(opts.dev, lower, zeros)
 test_sentences = loader.load_sentences(opts.test, lower, zeros)
-test_train_sentences = loader.load_sentences(opts.test_train, lower, zeros)
+#test_train_sentences = loader.load_sentences(opts.test_train, lower, zeros)
 
 update_tag_scheme(train_sentences, tag_scheme)
 update_tag_scheme(dev_sentences, tag_scheme)
 update_tag_scheme(test_sentences, tag_scheme)
-update_tag_scheme(test_train_sentences, tag_scheme)
+#update_tag_scheme(test_train_sentences, tag_scheme)
 
 dico_words_train = word_mapping(train_sentences, lower)[0]
 
@@ -199,9 +199,9 @@ dev_data = prepare_dataset(
 test_data = prepare_dataset(
     test_sentences, word_to_id, char_to_id, tag_to_id, lower
 )
-test_train_data = prepare_dataset(
-    test_train_sentences, word_to_id, char_to_id, tag_to_id, lower
-)
+#test_train_data = prepare_dataset(
+#    test_train_sentences, word_to_id, char_to_id, tag_to_id, lower
+#)
 
 print("%i / %i / %i sentences in train / dev / test." % (
     len(train_data), len(dev_data), len(test_data)))
@@ -254,12 +254,12 @@ losses = []
 loss = 0.0
 best_dev_F = -1.0
 best_test_F = -1.0
-best_train_F = -1.0
-all_F = [[0, 0, 0]]
+#best_train_F = -1.0
+all_F = [[0, 0]]
 plot_every = 10
 eval_every = 20
 count = 0
-vis = visdom.Visdom()
+#vis = visdom.Visdom()
 sys.stdout.flush()
 
 
@@ -401,26 +401,26 @@ for epoch in range(1, 5):
             text = '<p>' + '</p><p>'.join([str(l) for l in losses[-9:]]) + '</p>'
             losswin = 'loss_' + name
             textwin = 'loss_text_' + name
-            vis.line(np.array(losses), X=np.array([plot_every*i for i in range(len(losses))]),
+            #vis.line(np.array(losses), X=np.array([plot_every*i for i in range(len(losses))]),
                  win=losswin, opts={'title': losswin, 'legend': ['loss']})
-            vis.text(text, win=textwin, opts={'title': textwin})
+            #vis.text(text, win=textwin, opts={'title': textwin})
             loss = 0.0
 
         if count % (eval_every) == 0 and count > (eval_every * 20) or \
                 count % (eval_every*4) == 0 and count < (eval_every * 20):
             model.train(False)
-            best_train_F, new_train_F, _ = evaluating(model, test_train_data, best_train_F)
+            #best_train_F, new_train_F, _ = evaluating(model, test_train_data, best_train_F)
             best_dev_F, new_dev_F, save = evaluating(model, dev_data, best_dev_F)
             if save:
                 torch.save(model, model_name)
             best_test_F, new_test_F, _ = evaluating(model, test_data, best_test_F)
             sys.stdout.flush()
 
-            all_F.append([new_train_F, new_dev_F, new_test_F])
-            Fwin = 'F-score of {train, dev, test}_' + name
-            vis.line(np.array(all_F), win=Fwin,
-                 X=np.array([eval_every*i for i in range(len(all_F))]),
-                 opts={'title': Fwin, 'legend': ['train', 'dev', 'test']})
+            all_F.append([new_dev_F, new_test_F])
+            Fwin = 'F-score of {dev, test}_' + name
+            #vis.line(np.array(all_F), win=Fwin,
+            #     X=np.array([eval_every*i for i in range(len(all_F))]),
+            #     opts={'title': Fwin, 'legend': ['dev', 'test']})
             model.train(True)
 
         if count % len(train_data) == 0:
