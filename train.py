@@ -138,7 +138,7 @@ parameters['char_mode'] = opts.char_mode
 parameters['use_gpu'] = opts.use_gpu == 1 and torch.cuda.is_available()
 use_gpu = parameters['use_gpu']
 
-mapping_file = 'models/mapping.pkl'
+mapping_file = 'models/{}.pkl'.format(opts.name)
 
 name = parameters['name']
 model_name = models_path + name #get_name(parameters)
