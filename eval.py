@@ -82,12 +82,11 @@ zeros = parameters['zeros']
 tag_scheme = parameters['tag_scheme']
 
 test_sentences = load_sentences(opts.test, lower, zeros)
-print(test_sentences[:2])
 update_tag_scheme(test_sentences, tag_scheme)
 test_data = prepare_dataset(
     test_sentences, word_to_id, char_to_id, tag_to_id, lower
 )
-print(test_data[:2])
+
 
 model = torch.load(opts.model_path)
 
@@ -118,8 +117,6 @@ model.eval()
 def eval(model, datas, maxl=1):
     prediction = []
     confusion_matrix = torch.zeros((len(tag_to_id) - 2, len(tag_to_id) - 2))
-    print(type(datas))
-    print(datas[:2])
     for data in datas:
         ground_truth_id = data['tags']
         # l = getmaxlen(ground_truth_id)
@@ -166,8 +163,6 @@ def eval(model, datas, maxl=1):
                 sents += w
             else:
                 sents += ' ' + w
-        #print(predicted_id)
-        #print(sents)
         for (word, true_id, pred_id) in zip(words, ground_truth_id, predicted_id):
             line = ' '.join([word, id_to_tag[true_id], id_to_tag[pred_id]])
             prediction.append(line)
@@ -175,7 +170,6 @@ def eval(model, datas, maxl=1):
         prediction.append('')
     predf = opts.output + '/pred.' + model_name
     scoref = opts.output + '/score.' + model_name
-    print(id_to_tag)
     with open(predf, 'wb') as f:
         f.write('\n'.join(prediction))
 
