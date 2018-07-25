@@ -114,6 +114,10 @@ optparser.add_option(
     '--char_mode', choices=['CNN', 'LSTM'], default='CNN',
     help='char_CNN or char_LSTM'
 )
+optparser.add_option(
+    '--device', default=0,
+    type=int, help='cuda_device'
+)
 opts = optparser.parse_args()[0]
 
 parameters = OrderedDict()
@@ -134,6 +138,7 @@ parameters['dropout'] = opts.dropout
 parameters['reload'] = opts.reload == 1
 parameters['name'] = opts.name
 parameters['char_mode'] = opts.char_mode
+parameters['device'] = opts.device
 
 parameters['use_gpu'] = opts.use_gpu == 1 and torch.cuda.is_available()
 use_gpu = parameters['use_gpu']
@@ -247,7 +252,7 @@ model = BiLSTM_CRF(vocab_size=len(word_to_id),
 if parameters['reload']:
     model.load_state_dict(torch.load(model_name))
 if use_gpu:
-    model.cuda()
+    model.cuda(parameters['device'])
 learning_rate = 0.015
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 losses = []
@@ -301,7 +306,9 @@ def evaluating(model, datas, best_F):
         dwords = Variable(torch.LongTensor(data['words']))
         dcaps = Variable(torch.LongTensor(caps))
         if use_gpu:
-            val, out = model(dwords.cuda(), chars2_mask.cuda(), dcaps.cuda(), chars2_length, d)
+            val, out = model(dwords.cuda(parameters['device']),
+                             chars2_mask.cuda(parameters['device']),
+                             dcaps.cuda(parameters['device']), chars2_length, d)
         else:
             val, out = model(dwords, chars2_mask, dcaps, chars2_length, d)
         predicted_id = out
@@ -384,7 +391,10 @@ for epoch in range(1, 5):
         targets = torch.LongTensor(tags)
         caps = Variable(torch.LongTensor(data['caps']))
         if use_gpu:
-            neg_log_likelihood = model.neg_log_likelihood(sentence_in.cuda(), targets.cuda(), chars2_mask.cuda(), caps.cuda(), chars2_length, d)
+            neg_log_likelihood = model.neg_log_likelihood(sentence_in.cuda(parameters['device']),
+                                                          targets.cuda(parameters['device']),
+                                                          chars2_mask.cuda(parameters['device']),
+                                                          caps.cuda(parameters['device']), chars2_length, d)
         else:
             neg_log_likelihood = model.neg_log_likelihood(sentence_in, targets, chars2_mask, caps, chars2_length, d)
         loss += neg_log_likelihood.data[0] / len(data['words'])
