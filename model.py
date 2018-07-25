@@ -34,9 +34,10 @@ class BiLSTM_CRF(nn.Module):
 
     def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim, char_lstm_dim=25,
                  char_to_ix=None, pre_word_embeds=None, char_embedding_dim=25, use_gpu=False,
-                 n_cap=None, cap_embedding_dim=None, use_crf=True, char_mode='CNN'):
+                 n_cap=None, cap_embedding_dim=None, use_crf=True, char_mode='CNN', device=0):
         super(BiLSTM_CRF, self).__init__()
         self.use_gpu = use_gpu
+        self.device = device
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -104,7 +105,7 @@ class BiLSTM_CRF(nn.Module):
         # feats is a 2D tensor, len(sentence) * tagset_size
         r = torch.LongTensor(range(feats.size()[0]))
         if self.use_gpu:
-            r = r.cuda()
+            r = r.cuda(self.device)
             pad_start_tags = torch.cat([torch.cuda.LongTensor([self.tag_to_ix[START_TAG]]), tags])
             pad_stop_tags = torch.cat([tags, torch.cuda.LongTensor([self.tag_to_ix[STOP_TAG]])])
         else:
@@ -126,7 +127,7 @@ class BiLSTM_CRF(nn.Module):
             outputs = outputs.transpose(0, 1)
             chars_embeds_temp = Variable(torch.FloatTensor(torch.zeros((outputs.size(0), outputs.size(2)))))
             if self.use_gpu:
-                chars_embeds_temp = chars_embeds_temp.cuda()
+                chars_embeds_temp = chars_embeds_temp.cuda(self.device)
             for i, index in enumerate(output_lengths):
                 chars_embeds_temp[i] = torch.cat((outputs[i, index-1, :self.char_lstm_dim], outputs[i, 0, self.char_lstm_dim:]))
             chars_embeds = chars_embeds_temp.clone()
@@ -169,7 +170,7 @@ class BiLSTM_CRF(nn.Module):
         init_alphas[0][self.tag_to_ix[START_TAG]] = 0.
         forward_var = autograd.Variable(init_alphas)
         if self.use_gpu:
-            forward_var = forward_var.cuda()
+            forward_var = forward_var.cuda(self.device)
         for feat in feats:
             emit_score = feat.view(-1, 1)
             tag_var = forward_var + self.transitions + emit_score
@@ -188,7 +189,7 @@ class BiLSTM_CRF(nn.Module):
         init_vvars[0][self.tag_to_ix[START_TAG]] = 0
         forward_var = Variable(init_vvars)
         if self.use_gpu:
-            forward_var = forward_var.cuda()
+            forward_var = forward_var.cuda(self.device)
         for feat in feats:
             next_tag_var = forward_var.view(1, -1).expand(self.tagset_size, self.tagset_size) + self.transitions
             _, bptrs_t = torch.max(next_tag_var, dim=1)
@@ -197,7 +198,7 @@ class BiLSTM_CRF(nn.Module):
             viterbivars_t = next_tag_var[range(len(bptrs_t)), bptrs_t]
             viterbivars_t = Variable(torch.FloatTensor(viterbivars_t))
             if self.use_gpu:
-                viterbivars_t = viterbivars_t.cuda()
+                viterbivars_t = viterbivars_t.cuda(self.device)
             forward_var = viterbivars_t + feat
             backpointers.append(bptrs_t)
 
